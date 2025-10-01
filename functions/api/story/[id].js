@@ -111,4 +111,6 @@ export async function onRequestGet(context) {
 export async function onRequestOptions() {
   return new Response(null, {
     status: 200,
-    headers
+    headers: corsHeaders
+  });
+}
