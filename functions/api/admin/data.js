@@ -246,32 +246,80 @@ export async function onRequestDelete(context) {
     } else if (dataType === 'story') {
       // Delete story
       try {
+        console.log(`Attempting to delete story with ID: ${itemId}`);
+        
         const storiesData = await env.STORIES_KV.get('stories');
-        if (storiesData) {
-          let stories = JSON.parse(storiesData);
-          const storyIndex = stories.findIndex(story => story.id === itemId);
-          
-          if (storyIndex === -1) {
-            return new Response(JSON.stringify({
-              success: false,
-              error: 'Story not found'
-            }), {
-              status: 404,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
-          }
-          
-          stories.splice(storyIndex, 1);
-          await env.STORIES_KV.put('stories', JSON.stringify(stories));
-          
-          // Also delete individual story record
-          await env.STORIES_KV.delete(`story_${itemId}`);
+        console.log('Stories data from KV:', storiesData ? 'exists' : 'null');
+        
+        if (!storiesData) {
+          console.log('No stories data found in KV');
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'No stories data found'
+          }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
         }
+        
+        let stories;
+        try {
+          stories = JSON.parse(storiesData);
+          console.log(`Parsed stories array, length: ${Array.isArray(stories) ? stories.length : 'not an array'}`);
+        } catch (parseError) {
+          console.error('Error parsing stories data:', parseError);
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Invalid stories data format'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        if (!Array.isArray(stories)) {
+          console.error('Stories data is not an array:', typeof stories);
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Stories data format error'
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        const storyIndex = stories.findIndex(story => story.id === itemId);
+        console.log(`Story index found: ${storyIndex}`);
+        
+        if (storyIndex === -1) {
+          console.log(`Story with ID ${itemId} not found in stories array`);
+          console.log('Available story IDs:', stories.map(s => s.id));
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Story not found'
+          }), {
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        // Remove story from array
+        const removedStory = stories.splice(storyIndex, 1)[0];
+        console.log(`Removed story: ${removedStory.title || removedStory.id}`);
+        
+        // Update stories array in KV
+        await env.STORIES_KV.put('stories', JSON.stringify(stories));
+        console.log('Updated stories array in KV');
+        
+        // Also delete individual story record
+        await env.STORIES_KV.delete(`story_${itemId}`);
+        console.log(`Deleted individual story record: story_${itemId}`);
+        
       } catch (error) {
         console.error('Error deleting story:', error);
         return new Response(JSON.stringify({
           success: false,
-          error: 'Failed to delete story'
+          error: `Failed to delete story: ${error.message}`
         }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
