@@ -265,8 +265,8 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    // API returns data.data.stories, not data.data directly
-                    stories = data.data.stories || [];
+                    // API returns data.stories directly
+                    stories = data.stories || [];
                     displayStories(stories);
                     updateStats(stories);
                 } else {
@@ -312,7 +312,7 @@
         function createStoryCard(story) {
             const card = document.createElement('div');
             card.className = 'story-card';
-            card.onclick = () => window.location.href = `/story/${story.id}`;
+            card.onclick = () => window.location.href = `/story?id=${story.id}`;
             
             const publishDate = new Date(story.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric',

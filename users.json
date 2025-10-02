@@ -9,6 +9,16 @@
       "createdAt": "2025-10-02T05:00:00.581Z",
       "lastLoginAt": "2025-10-02T05:00:05.613Z",
       "isActive": true
+    },
+    {
+      "id": "6f251da9-3a21-42b9-8614-5568e0ea99ff",
+      "username": "testuser2",
+      "email": "test2@example.com",
+      "password": "ef92b778bafe771e89245b89ecbc08a44a4e166c06659911881f383d4473e94f",
+      "token": "720e16e7c052519e9b219eb367ccc8765edfc340e602f89f2e4ee4d37c6a532c",
+      "createdAt": "2025-10-02T14:25:51.658Z",
+      "lastLoginAt": "2025-10-02T14:25:51.658Z",
+      "isActive": true
     }
   ]
 }

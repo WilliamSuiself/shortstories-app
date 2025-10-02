@@ -214,11 +214,47 @@
     
     <script>
         async function loadStory() {
-            const storyId = window.location.pathname.split('/').pop();
+            // Try multiple methods to get story ID
+            let storyId = null;
+            
+            // Method 1: From URL path (for direct access like /story/test-001)
+            const pathParts = window.location.pathname.split('/').filter(part => part);
+            if (pathParts.length > 1 && pathParts[0] === 'story' && pathParts[1] !== 'story.html') {
+                storyId = pathParts[1];
+            }
+            
+            // Method 2: From URL search params
+            if (!storyId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                storyId = urlParams.get('id');
+            }
+            
+            // Method 3: From hash
+            if (!storyId && window.location.hash) {
+                storyId = window.location.hash.substring(1);
+            }
+            
+            // Method 4: From referrer (if coming from index page)
+            if (!storyId && document.referrer) {
+                const referrerUrl = new URL(document.referrer);
+                const referrerPath = referrerUrl.pathname;
+                if (referrerPath.includes('/story/')) {
+                    storyId = referrerPath.split('/story/')[1];
+                }
+            }
+            
+            console.log('🔍 Story ID detection:');
+            console.log('- Current URL:', window.location.href);
+            console.log('- Path parts:', pathParts);
+            console.log('- Search params:', window.location.search);
+            console.log('- Hash:', window.location.hash);
+            console.log('- Referrer:', document.referrer);
+            console.log('- Detected story ID:', storyId);
+            
             const container = document.getElementById('storyContent');
             
             if (!storyId) {
-                showError('Invalid story ID');
+                showError('Invalid story ID - Unable to determine which story to load');
                 return;
             }
             
@@ -257,6 +293,7 @@
                 minute: '2-digit'
             });
             
+            // Create the main structure first
             container.innerHTML = `
                 <div class="story-header">
                     <h1 class="story-title">${escapeHtml(story.title)}</h1>
@@ -300,22 +337,35 @@
                         <span>📖</span>
                         <span>Story Content</span>
                     </div>
-                    <div class="story-content">${formatContent(story.content)}</div>
+                    <div class="story-content" id="storyContentArea"></div>
                 </div>
             `;
+            
+            // Set the content separately using innerHTML to ensure HTML is rendered
+            const contentArea = document.getElementById('storyContentArea');
+            const formattedContent = formatContent(story.content);
+            console.log('📝 Setting content:', formattedContent);
+            contentArea.innerHTML = formattedContent;
         }
         
         function formatContent(content) {
-            // Escape HTML and convert line breaks to paragraphs
-            const escaped = escapeHtml(content);
-            const paragraphs = escaped.split('\n\n').filter(p => p.trim());
+            // Check if content contains HTML tags
+            const hasHtmlTags = /<[^>]+>/.test(content);
             
-            if (paragraphs.length <= 1) {
-                // If no double line breaks, treat single line breaks as paragraphs
-                return escaped.split('\n').filter(p => p.trim()).map(p => `<p>${p}</p>`).join('');
+            if (hasHtmlTags) {
+                // Content already contains HTML, return as-is
+                return content;
+            } else {
+                // Plain text content, convert line breaks to paragraphs
+                const paragraphs = content.split('\n\n').filter(p => p.trim());
+                
+                if (paragraphs.length <= 1) {
+                    // If no double line breaks, treat single line breaks as paragraphs
+                    return content.split('\n').filter(p => p.trim()).map(p => `<p>${escapeHtml(p)}</p>`).join('');
+                }
+                
+                return paragraphs.map(p => `<p>${escapeHtml(p.replace(/\n/g, '<br>'))}</p>`).join('');
             }
-            
-            return paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
         }
         
         function showError(message) {

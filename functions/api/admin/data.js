@@ -92,15 +92,21 @@ export async function onRequestGet(context) {
         if (storiesData) {
           const parsedData = JSON.parse(storiesData);
           
-          // Ensure data is an array
-          if (Array.isArray(parsedData)) {
-            data = parsedData;
-          } else if (parsedData && parsedData.stories && Array.isArray(parsedData.stories)) {
-            // Handle case where data is wrapped in an object
+          // Handle both formats: {stories: [...]} and [...]
+          if (parsedData.stories && Array.isArray(parsedData.stories)) {
+            // New format: {stories: [...]}
             data = parsedData.stories;
+            console.log('Using new format - stories array found');
+          } else if (Array.isArray(parsedData)) {
+            // Old format: [...]
+            data = parsedData;
+            console.log('Using old format - direct array');
           } else {
-            console.error('Stories data is not in expected format:', parsedData);
+            // Invalid format - initialize as empty
+            console.error('Invalid stories format, initializing empty array:', typeof parsedData, parsedData);
             data = [];
+            // Save corrected format
+            await env.STORIES_KV.put('stories', JSON.stringify({ stories: [] }));
           }
           
           totalCount = data.length;
@@ -133,8 +139,16 @@ export async function onRequestGet(context) {
         }
         
         if (storiesData) {
-          const stories = JSON.parse(storiesData);
-          storyCount = stories.length;
+          const parsedData = JSON.parse(storiesData);
+          
+          // Handle both formats: {stories: [...]} and [...]
+          if (parsedData.stories && Array.isArray(parsedData.stories)) {
+            storyCount = parsedData.stories.length;
+          } else if (Array.isArray(parsedData)) {
+            storyCount = parsedData.length;
+          } else {
+            storyCount = 0;
+          }
         }
         
         data = {
@@ -262,26 +276,60 @@ export async function onRequestDelete(context) {
           });
         }
         
-        let stories;
+        let stories = []; // Initialize as empty array by default
         try {
-          stories = JSON.parse(storiesData);
-          console.log(`Parsed stories array, length: ${Array.isArray(stories) ? stories.length : 'not an array'}`);
+          const parsedData = JSON.parse(storiesData);
+          console.log('Raw stories data type:', typeof storiesData);
+          console.log('Raw stories data length:', storiesData ? storiesData.length : 'null');
+          console.log('Parsed data type:', typeof parsedData);
+          console.log('Parsed data:', parsedData);
+          
+          if (parsedData && typeof parsedData === 'object') {
+            if (Array.isArray(parsedData)) {
+              // Direct array format
+              console.log('Stories data is direct array format, length:', parsedData.length);
+              stories = parsedData;
+            } else if (parsedData.stories && Array.isArray(parsedData.stories)) {
+              // Wrapped format
+              console.log('Stories data is wrapped format, length:', parsedData.stories.length);
+              stories = parsedData.stories;
+            } else {
+              console.log('Stories data has unexpected structure:', Object.keys(parsedData));
+              console.log('Initializing empty array and saving corrected format');
+              stories = [];
+              // Save corrected format
+              await env.STORIES_KV.put('stories', JSON.stringify({ stories: [] }));
+            }
+          } else {
+            // Invalid format - initialize as empty
+            console.error('Invalid stories format, initializing empty array:', typeof parsedData, parsedData);
+            stories = [];
+            // Save corrected format
+            await env.STORIES_KV.put('stories', JSON.stringify({ stories: [] }));
+          }
         } catch (parseError) {
           console.error('Error parsing stories data:', parseError);
+          console.error('Parse error details:', parseError.message, parseError.stack);
           return new Response(JSON.stringify({
             success: false,
-            error: 'Invalid stories data format'
+            error: `Invalid stories data format: ${parseError.message}`
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           });
         }
         
+        console.log('Final stories variable type:', typeof stories);
+        console.log('Final stories is array:', Array.isArray(stories));
+        console.log('Final stories length:', stories ? stories.length : 'null');
+        
         if (!Array.isArray(stories)) {
-          console.error('Stories data is not an array:', typeof stories);
+          console.error('CRITICAL ERROR: Stories is not an array after processing!');
+          console.error('Stories type:', typeof stories);
+          console.error('Stories value:', stories);
           return new Response(JSON.stringify({
             success: false,
-            error: 'Stories data format error'
+            error: `Stories data format error: expected array, got ${typeof stories}`
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -307,8 +355,8 @@ export async function onRequestDelete(context) {
         const removedStory = stories.splice(storyIndex, 1)[0];
         console.log(`Removed story: ${removedStory.title || removedStory.id}`);
         
-        // Update stories array in KV
-        await env.STORIES_KV.put('stories', JSON.stringify(stories));
+        // Update stories array in KV in correct format
+        await env.STORIES_KV.put('stories', JSON.stringify({ stories: stories }));
         console.log('Updated stories array in KV');
         
         // Also delete individual story record
@@ -355,6 +403,44 @@ export async function onRequestOptions() {
   });
 }
 
+// Handle POST requests (disabled initialization)
+export async function onRequestPost(context) {
+  const { request, env } = context;
+  const token = request.headers.get('Authorization')?.replace('Bearer ', '');
+  
+  try {
+    // Verify admin token
+    const admin = await verifyAdminToken(token, env);
+    if (!admin) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Unauthorized: Invalid admin token'
+      }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'POST operations are disabled for security'
+    }), {
+      status: 403,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+    
+  } catch (error) {
+    console.error('Admin post error:', error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Internal server error'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+}
+
 // Handle other methods
 export async function onRequest(context) {
   const { request } = context;
@@ -362,6 +448,8 @@ export async function onRequest(context) {
   
   if (method === 'GET') {
     return onRequestGet(context);
+  } else if (method === 'POST') {
+    return onRequestPost(context);
   } else if (method === 'DELETE') {
     return onRequestDelete(context);
   } else if (method === 'OPTIONS') {

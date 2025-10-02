@@ -11,7 +11,7 @@
       "createdAt": "2025-09-29T14:29:42.077Z",
       "updatedAt": "2025-09-29T14:29:42.077Z",
       "status": "published",
-      "viewCount": 2
+      "viewCount": 4
     },
     {
       "id": "3b9bb415-7a05-4d3f-9adb-dc963c30f2ea",
@@ -77,6 +77,36 @@
       "authorEmail": "test@example.com",
       "createdAt": "2025-10-02T05:00:19.294Z",
       "updatedAt": "2025-10-02T05:00:19.294Z",
+      "status": "published",
+      "viewCount": 1
+    },
+    {
+      "id": "d06fbc42-c06f-45b2-8579-1b888bc8643f",
+      "title": "HTML Test Story",
+      "content": "<h1 style=\"color: #333; font-family: Arial, sans-serif;\">HTML Test Story</h1>\n\n<p style=\"color: #666; font-style: italic;\">This is a test story with HTML formatting</p>\n\n<hr style=\"border: 1px solid #ddd; margin: 20px 0;\">\n\n<div style=\"background-color: #f9f9f9; padding: 15px; margin-bottom: 20px; border-radius: 5px;\">\n<h2 style=\"color: #444;\">Chapter 1</h2>\n<p style=\"line-height: 1.6; margin-bottom: 15px;\">This paragraph should be properly formatted with HTML styling.</p>\n</div>",
+      "author": "Test Author",
+      "category": "Test",
+      "publishType": "fullstory",
+      "authorId": "6f251da9-3a21-42b9-8614-5568e0ea99ff",
+      "authorUsername": "testuser2",
+      "authorEmail": "test2@example.com",
+      "createdAt": "2025-10-02T14:26:01.831Z",
+      "updatedAt": "2025-10-02T14:26:01.831Z",
+      "status": "published",
+      "viewCount": 6
+    },
+    {
+      "id": "39f3c835-df8b-4440-a2f7-2d5f37f7fbff",
+      "title": "Two rivals must work",
+      "content": "<h1 style=\"color: #333; font-family: Arial, sans-serif;\">Two rivals must work</h1>\n\n<p style=\"color: #666; font-style: italic;\">Two rivals must work together and fall in love</p>\n\n<hr style=\"border: 1px solid #ddd; margin: 20px 0;\">\n\n<div style=\"background-color: #f9f9f9; padding: 15px; margin-bottom: 20px; border-radius: 5px;\">\n\n<h2 style=\"color: #444;\">Characters</h2>\n\n<ul>\n\n<li><b>Elara Vance</b>: Gender: Female, Age: 32, Petite with sharp features and always impeccably dressed in a crisp chef's whites. Her dark hair is usually pulled back in a severe bun. She carries an air of quiet authority, her movements precise and economical.</li>\n\n<li><b>Leo Maxwell</b>: Gender: Male, Age: 34, Tall and lean with a perpetual mischievous glint in his eyes and an unruly cascade of brown curls. He often favors brightly colored chef jackets and is quick with a joke or a dramatic flourish.</li>\n\n<li><b>Arthur Finch</b>: Gender: Male, Age: 58, Distinguished-looking with salt-and-pepper hair, often found with a reassuring smile. He moves with a calm grace, his eyes missing nothing that happens in the dining room.</li>\n\n<li><b>Celeste Dubois</b>: Gender: Female, Age: 40s, Impeccably dressed, with an air of quiet authority that commands respect. Her gaze is sharp and analytical, missing no detail. She is known for her understated elegance and piercing insights in her reviews.</li>\n\n</ul>\n\n</div>\n\n<h2 style=\"color: #444; margin-top: 30px;\">Chapter 1</h2>\n\n<hr style=\"border: 0.5px solid #eee; margin: 10px 0;\">\n\n<p style=\"line-height: 1.6; margin-bottom: 15px;\">The air in The Gilded Spoon's kitchen hummed with the quiet intensity of a well-oiled machine. Elara Vance, a study in focused precision, moved with the grace of a seasoned conductor. Her dark hair, pulled back in a severe bun, offered no stray strands to distract from the delicate task at hand: assembling a deconstructed lavender panna cotta. Each berry was placed with surgical exactness, each edible flower a tiny, vibrant jewel. The scent of vanilla and fresh cream mingled with the faint, metallic tang of stainless steel, a symphony of aromas that spoke of meticulous craft. Her crisp chef's whites, unblemished, mirrored the pristine order of her station. This was her domain, a sanctuary of culinary tradition and refined technique.</p>\n\n<p style=\"line-height: 1.6; margin-bottom: 15px;\">The sanctuary shattered with the force of a small, flamboyant hurricane. Leo Maxwell burst through the swinging doors, a whirlwind of unruly brown curls and a shockingly bright fuchsia chef's jacket. He carried a smoking cloche, a mischievous glint in his eyes, and an aroma that was decidedly *not* lavender. \"Behold, Elara, the future of gastronomy!\" he boomed, his voice echoing off the gleaming surfaces. He lifted the cloche with a dramatic flourish, revealing a shimmering, almost iridescent, sphere nestled on a bed of what looked suspiciously like dehydrated kale. \"Molecular gastronomy meets foraging chic: the 'Forest Floor Orb'!\"</p>",
+      "author": "yunhaisui",
+      "category": "Fiction",
+      "publishType": "fullstory",
+      "authorId": "39890d4e-743f-464d-bbe5-b69dd5fea0b5",
+      "authorUsername": "yunhaisui",
+      "authorEmail": "yunhaisui@example.com",
+      "createdAt": "2025-10-02T14:47:52.715Z",
+      "updatedAt": "2025-10-02T14:47:52.716Z",
       "status": "published",
       "viewCount": 1
     }

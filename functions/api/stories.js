@@ -10,99 +10,75 @@ const corsHeaders = {
 
 // Main function handler for GET requests
 export async function onRequestGet(context) {
-  const { env } = context;
-  
-  try {
-    let stories = [];
-    let kvStatus = 'unknown';
+    const { env } = context;
     
-    // Try to get stories from Cloudflare KV
-    if (env.STORIES_KV) {
-      kvStatus = 'available';
-      try {
-        const data = await env.STORIES_KV.get('stories', 'json');
-        console.log('KV raw data:', data);
+    // KV数据库为空时返回空数组
+    const emptyStories = [];
+    
+    // 添加调试信息
+    console.log('Using hardcoded test data temporarily');
+    console.log('Environment keys:', Object.keys(env));
+    console.log('STORIES_KV exists:', !!env.STORIES_KV);
+    console.log('STORIES_KV type:', typeof env.STORIES_KV);
+    
+    try {
+        // 从KV读取数据，如果为空则返回空数组
+        let stories = emptyStories;
+        let kvStatus = 'empty';
         
-        if (data && data.stories && Array.isArray(data.stories)) {
-          stories = data.stories;
-          console.log('✅ Loaded', stories.length, 'stories from KV');
-          kvStatus = 'success';
-        } else if (data) {
-          console.warn('⚠️ KV data exists but invalid format:', typeof data, data);
-          kvStatus = 'invalid_format';
-        } else {
-          console.log('📭 No stories found in KV - empty database');
-          kvStatus = 'empty';
+        if (env.STORIES_KV) {
+            try {
+                console.log('Attempting to read from KV...');
+                const storiesData = await env.STORIES_KV.get('stories');
+                console.log('KV raw data:', storiesData);
+                
+                if (storiesData) {
+                    const kvData = JSON.parse(storiesData);
+                    // Handle both formats: direct array or {stories: []} object
+                    if (Array.isArray(kvData)) {
+                        stories = kvData;
+                        kvStatus = 'kv';
+                        console.log('Successfully loaded from KV (array format):', kvData.length, 'stories');
+                    } else if (kvData && Array.isArray(kvData.stories)) {
+                        stories = kvData.stories;
+                        kvStatus = 'kv';
+                        console.log('Successfully loaded from KV (object format):', kvData.stories.length, 'stories');
+                    }
+                } else {
+                    console.log('No stories data found in KV, returning empty array');
+                }
+            } catch (kvError) {
+                console.log('KV read failed, returning empty array:', kvError.message);
+            }
         }
-      } catch (kvError) {
-        console.error('❌ KV read error:', kvError.message);
-        console.error('KV Error stack:', kvError.stack);
-        kvStatus = 'error';
-      }
-    } else {
-      console.warn('🚫 STORIES_KV not available - KV namespace not bound');
-      console.warn('Please configure KV namespace in Cloudflare Pages settings');
-      kvStatus = 'not_bound';
+        
+        return new Response(JSON.stringify({
+            success: true,
+            stories: stories,
+            kvStatus: kvStatus,
+            kvAvailable: !!env.STORIES_KV,
+            storiesCount: stories.length
+        }), {
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error in stories API:', error);
+        return new Response(JSON.stringify({
+            success: false,
+            error: error.message,
+            stories: emptyStories // 出错时返回空数组
+        }), {
+            status: 500,
+            headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
+        });
     }
-    
-    // Ensure stories is always an array
-    if (!Array.isArray(stories)) {
-      console.warn('⚠️ Stories is not an array, converting:', typeof stories);
-      stories = [];
-    }
-    
-    // Sort stories by creation date (newest first)
-    stories.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    // Return stories with summary info (exclude full content)
-    const storiesSummary = stories.map(story => ({
-      id: story.id,
-      title: story.title,
-      author: story.author,
-      category: story.category,
-      publishType: story.publishType,
-      createdAt: story.createdAt,
-      status: story.status,
-      viewCount: story.viewCount || 0,
-      preview: story.content ? story.content.substring(0, 200) + '...' : ''
-    }));
-    
-    return new Response(JSON.stringify({
-      success: true,
-      data: {
-        stories: storiesSummary,
-        total: storiesSummary.length,
-        timestamp: new Date().toISOString(),
-        debug: {
-          kvStatus: kvStatus,
-          kvAvailable: !!env.STORIES_KV,
-          storiesIsArray: Array.isArray(stories),
-          originalStoriesLength: stories.length
-        }
-      }
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error fetching stories:', error);
-    
-    return new Response(JSON.stringify({
-      success: false,
-      error: 'Internal server error',
-      message: 'An error occurred while fetching stories'
-    }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders
-      }
-    });
-  }
 }
 
 // Handle OPTIONS requests for CORS preflight
