@@ -64,6 +64,21 @@
       "updatedAt": "2025-10-01T15:27:13.186Z",
       "status": "published",
       "viewCount": 1
+    },
+    {
+      "id": "e99cf524-344a-4f9d-a14b-5ddac26796bd",
+      "title": "测试故事",
+      "content": "这是一个测试故事的内容。",
+      "author": "testuser",
+      "category": "Fiction",
+      "publishType": "fullstory",
+      "authorId": "01e6603c-2269-448c-968d-fa23512e8656",
+      "authorUsername": "testuser",
+      "authorEmail": "test@example.com",
+      "createdAt": "2025-10-02T05:00:19.294Z",
+      "updatedAt": "2025-10-02T05:00:19.294Z",
+      "status": "published",
+      "viewCount": 1
     }
   ]
 }

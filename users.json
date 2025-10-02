@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "id": "01e6603c-2269-448c-968d-fa23512e8656",
+      "username": "testuser",
+      "email": "test@example.com",
+      "password": "7e6e0c3079a08c5cc6036789b57e951f65f82383913ba1a49ae992544f1b4b6e",
+      "token": "3be7ebc760108df908328023b5739e4b8385e89ac75840d538aa3b00594bc626",
+      "createdAt": "2025-10-02T05:00:00.581Z",
+      "lastLoginAt": "2025-10-02T05:00:05.613Z",
+      "isActive": true
+    }
+  ]
+}

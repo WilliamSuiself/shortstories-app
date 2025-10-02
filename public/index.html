@@ -265,7 +265,8 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    stories = data.data;
+                    // API returns data.data.stories, not data.data directly
+                    stories = data.data.stories || [];
                     displayStories(stories);
                     updateStats(stories);
                 } else {

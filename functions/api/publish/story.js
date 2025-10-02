@@ -11,9 +11,34 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
-// Helper function to validate token
-function validateToken(token) {
-  return token && token.length > 0;
+// Helper function to validate and get user by token
+async function validateTokenAndGetUser(token, env) {
+  if (!token || token.length === 0) {
+    return { valid: false, error: 'Token is required' };
+  }
+  
+  if (!env.STORIES_KV) {
+    return { valid: false, error: 'Storage service not available' };
+  }
+  
+  try {
+    const usersData = await env.STORIES_KV.get('users');
+    if (!usersData) {
+      return { valid: false, error: 'No users found' };
+    }
+    
+    const users = JSON.parse(usersData);
+    const user = users.find(u => u.token === token && u.isActive);
+    
+    if (!user) {
+      return { valid: false, error: 'Invalid or expired token' };
+    }
+    
+    return { valid: true, user };
+  } catch (error) {
+    console.error('Error validating token:', error);
+    return { valid: false, error: 'Token validation failed' };
+  }
 }
 
 // Helper function to validate story data
@@ -84,12 +109,13 @@ export async function onRequestPost(context) {
       });
     }
     
-    // Validate token
-    if (!validateToken(body.token)) {
+    // Validate token and get user
+    const tokenValidation = await validateTokenAndGetUser(body.token, env);
+    if (!tokenValidation.valid) {
       return new Response(JSON.stringify({
         success: false,
         error: 'Authentication failed',
-        message: 'Invalid authentication token'
+        message: tokenValidation.error
       }), {
         status: 401,
         headers: {
@@ -99,6 +125,8 @@ export async function onRequestPost(context) {
       });
     }
     
+    const user = tokenValidation.user;
+    
     // Create new story
     const storyId = uuidv4();
     const now = new Date().toISOString();
@@ -107,27 +135,51 @@ export async function onRequestPost(context) {
       id: storyId,
       title: body.title.trim(),
       content: body.content,
-      author: body.author || 'Anonymous',
+      author: body.author || user.username || 'Anonymous',
       category: body.category || 'Fiction',
       publishType: body.publishType,
-      userId: 'user_' + body.token.substring(0, 8),
+      authorId: user.id,
+      authorUsername: user.username,
+      authorEmail: user.email,
       createdAt: now,
       updatedAt: now,
       status: 'published',
       viewCount: 0
     };
     
-    // Store in Cloudflare KV (you'll need to bind a KV namespace)
+    // Store in Cloudflare KV with fallback handling
+    let storageSuccess = false;
+    
     if (env.STORIES_KV) {
-      // Get existing stories
-      const existingData = await env.STORIES_KV.get('stories', 'json') || { stories: [] };
-      existingData.stories.push(newStory);
-      
-      // Save updated stories
-      await env.STORIES_KV.put('stories', JSON.stringify(existingData));
-      
-      // Also save individual story for quick access
-      await env.STORIES_KV.put(`story_${storyId}`, JSON.stringify(newStory));
+      try {
+        // Get existing stories
+        const existingData = await env.STORIES_KV.get('stories', 'json') || { stories: [] };
+        if (!existingData.stories) {
+          existingData.stories = [];
+        }
+        existingData.stories.push(newStory);
+        
+        // Save updated stories
+        await env.STORIES_KV.put('stories', JSON.stringify(existingData));
+        
+        // Also save individual story for quick access
+        await env.STORIES_KV.put(`story_${storyId}`, JSON.stringify(newStory));
+        
+        console.log('Story saved to KV successfully:', storyId);
+        storageSuccess = true;
+      } catch (kvError) {
+        console.error('KV storage error:', kvError);
+        console.error('KV Error details:', kvError.message);
+      }
+    } else {
+      console.warn('STORIES_KV not available - KV namespace not bound');
+      console.warn('Please configure KV namespace in Cloudflare Pages settings');
+    }
+    
+    // If KV storage failed, try to use Durable Objects or return warning
+    if (!storageSuccess) {
+      console.warn('Story published but not persisted - KV storage unavailable');
+      console.warn('Story data:', JSON.stringify(newStory, null, 2));
     }
     
     // Return success response

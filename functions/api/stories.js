@@ -14,17 +14,40 @@ export async function onRequestGet(context) {
   
   try {
     let stories = [];
+    let kvStatus = 'unknown';
     
     // Try to get stories from Cloudflare KV
     if (env.STORIES_KV) {
-      const data = await env.STORIES_KV.get('stories', 'json');
-      if (data && data.stories) {
-        stories = data.stories;
+      kvStatus = 'available';
+      try {
+        const data = await env.STORIES_KV.get('stories', 'json');
+        console.log('KV raw data:', data);
+        
+        if (data && data.stories && Array.isArray(data.stories)) {
+          stories = data.stories;
+          console.log('✅ Loaded', stories.length, 'stories from KV');
+          kvStatus = 'success';
+        } else if (data) {
+          console.warn('⚠️ KV data exists but invalid format:', typeof data, data);
+          kvStatus = 'invalid_format';
+        } else {
+          console.log('📭 No stories found in KV - empty database');
+          kvStatus = 'empty';
+        }
+      } catch (kvError) {
+        console.error('❌ KV read error:', kvError.message);
+        console.error('KV Error stack:', kvError.stack);
+        kvStatus = 'error';
       }
+    } else {
+      console.warn('🚫 STORIES_KV not available - KV namespace not bound');
+      console.warn('Please configure KV namespace in Cloudflare Pages settings');
+      kvStatus = 'not_bound';
     }
     
-    // If no stories in KV, return empty array
-    if (stories.length === 0) {
+    // Ensure stories is always an array
+    if (!Array.isArray(stories)) {
+      console.warn('⚠️ Stories is not an array, converting:', typeof stories);
       stories = [];
     }
     
@@ -49,7 +72,13 @@ export async function onRequestGet(context) {
       data: {
         stories: storiesSummary,
         total: storiesSummary.length,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        debug: {
+          kvStatus: kvStatus,
+          kvAvailable: !!env.STORIES_KV,
+          storiesIsArray: Array.isArray(stories),
+          originalStoriesLength: stories.length
+        }
       }
     }), {
       status: 200,
