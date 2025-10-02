@@ -521,12 +521,20 @@
                 const result = await response.json();
                 
                 if (result.success) {
-                    const data = result.data || [];
+                    let data = result.data || [];
                     
-                    if (data.length === 0) {
+                    // Ensure data is an array for stories and users
+                    if (tabName === 'stories' || tabName === 'users') {
+                        if (!Array.isArray(data)) {
+                            console.error('Expected array but got:', typeof data, data);
+                            data = [];
+                        }
+                    }
+                    
+                    if (Array.isArray(data) && data.length === 0) {
                         loadingEl.style.display = 'none';
                         emptyEl.style.display = 'block';
-                    } else {
+                    } else if (Array.isArray(data) && data.length > 0) {
                         loadingEl.style.display = 'none';
                         tableEl.style.display = 'table';
                         
@@ -535,6 +543,10 @@
                         } else if (tabName === 'stories') {
                             renderStoriesTable(data);
                         }
+                    } else {
+                        loadingEl.style.display = 'none';
+                        emptyEl.textContent = '数据格式错误';
+                        emptyEl.style.display = 'block';
                     }
                 } else {
                     throw new Error(result.error || '加载数据失败');
@@ -572,6 +584,12 @@
         function renderStoriesTable(stories) {
             const tbody = document.getElementById('storiesTableBody');
             tbody.innerHTML = '';
+            
+            // Validate that stories is an array
+            if (!Array.isArray(stories)) {
+                console.error('renderStoriesTable: Expected array but got:', typeof stories, stories);
+                return;
+            }
             
             stories.forEach(story => {
                 const row = document.createElement('tr');

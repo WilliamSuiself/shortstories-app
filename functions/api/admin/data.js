@@ -90,14 +90,29 @@ export async function onRequestGet(context) {
       try {
         const storiesData = await env.STORIES_KV.get('stories');
         if (storiesData) {
-          data = JSON.parse(storiesData);
+          const parsedData = JSON.parse(storiesData);
+          
+          // Ensure data is an array
+          if (Array.isArray(parsedData)) {
+            data = parsedData;
+          } else if (parsedData && parsedData.stories && Array.isArray(parsedData.stories)) {
+            // Handle case where data is wrapped in an object
+            data = parsedData.stories;
+          } else {
+            console.error('Stories data is not in expected format:', parsedData);
+            data = [];
+          }
+          
           totalCount = data.length;
           
           // Sort by creation date (newest first)
-          data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          if (data.length > 0) {
+            data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          }
         }
       } catch (error) {
         console.error('Error reading stories from KV:', error);
+        data = [];
       }
     } else {
       // Get dashboard stats
